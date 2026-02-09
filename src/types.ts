@@ -12,6 +12,19 @@ export type PluginRegistrationRecord = {
   routeCount: number;
 };
 
+export type PluginLoadError = {
+  specifier: string;
+  error: string;
+  timestamp: number;
+};
+
+export type AdapterStatus = {
+  plugins: PluginRegistrationRecord[];
+  errors: PluginLoadError[];
+  totals: { tools: number; hooks: number; services: number; routes: number };
+  startedAt: number;
+};
+
 export class NotImplementedError extends Error {
   constructor(methodName: string) {
     super(`RuntimeBridge.${methodName}() is not implemented.`);
