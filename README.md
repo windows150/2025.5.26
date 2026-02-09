@@ -1,6 +1,17 @@
-# @openclaw/eliza-adapter
+# @elizaos/openclaw-adapter
 
 Run [Eliza](https://github.com/elizaos/eliza) plugins inside [OpenClaw](https://github.com/openclaw/openclaw). Wraps Eliza actions as OpenClaw tools, providers as lifecycle hooks, services, routes, and evaluators — letting the two agent ecosystems interoperate.
+
+## Quick start
+
+```bash
+# 1. Install the adapter and an Eliza plugin
+npm install @elizaos/openclaw-adapter @elizaos/plugin-evm
+
+# 2. Add to your OpenClaw config (see Configuration below)
+
+# 3. Start OpenClaw — the EVM wallet tools are now available to your agent
+```
 
 ## What it does
 
@@ -15,27 +26,38 @@ Run [Eliza](https://github.com/elizaos/eliza) plugins inside [OpenClaw](https://
 
 ## Install
 
-### Inside the OpenClaw monorepo
-
-Already in place at `extensions/eliza-adapter/`. Enable it in your OpenClaw config.
-
-### Standalone (npm)
-
 ```bash
-npm install @openclaw/eliza-adapter
+npm install @elizaos/openclaw-adapter
 ```
 
-Then register as an OpenClaw extension (see Configuration below).
+If you're inside the OpenClaw monorepo, the adapter is already at `extensions/eliza-adapter/` and gets discovered automatically.
 
 ## Configuration
 
-Add to your OpenClaw config:
+### Step 1: Install the Eliza plugins you want
+
+```bash
+# EVM wallet (Ethereum, Base, Arbitrum, etc.)
+npm install @elizaos/plugin-evm
+
+# Solana wallet
+npm install @elizaos/plugin-solana
+
+# Or any other Eliza plugin
+npm install @elizaos/plugin-discord
+```
+
+### Step 2: Add the adapter to your OpenClaw config
+
+In your `openclaw.json` (or wherever your OpenClaw config lives):
 
 ```json
 {
   "plugins": {
     "eliza-adapter": {
-      "plugins": ["@elizaos/plugin-evm"],
+      "plugins": [
+        "@elizaos/plugin-evm"
+      ],
       "settings": {
         "EVM_PRIVATE_KEY": "${EVM_PRIVATE_KEY}",
         "EVM_PROVIDER_URL": "https://mainnet.infura.io/v3/YOUR_KEY"
@@ -46,13 +68,82 @@ Add to your OpenClaw config:
 }
 ```
 
-### Config fields
+### Step 3: Set environment variables
 
-| Field | Required | Description |
-|---|---|---|
-| `plugins` | Yes | Array of Eliza plugin package names or file paths to load |
-| `settings` | No | Key-value settings passed to plugins via `runtime.getSetting()`. Supports `${ENV_VAR}` expansion. |
-| `agentName` | No | Agent display name (default: `"Eliza"`) |
+The adapter resolves `${VAR}` patterns in settings from environment variables:
+
+```bash
+export EVM_PRIVATE_KEY="0x..."
+export EVM_PROVIDER_URL="https://mainnet.infura.io/v3/..."
+```
+
+Or pass them directly (not recommended for secrets):
+
+```json
+{
+  "settings": {
+    "EVM_PRIVATE_KEY": "0xabcdef..."
+  }
+}
+```
+
+### Config reference
+
+| Field | Required | Default | Description |
+|---|---|---|---|
+| `plugins` | **Yes** | — | Array of Eliza plugin package names or file paths |
+| `settings` | No | `{}` | Key-value pairs passed to plugins via `runtime.getSetting()`. Supports `${ENV_VAR}` expansion. |
+| `agentName` | No | `"Eliza"` | Agent display name in the Eliza character context |
+
+### Example configs
+
+**EVM wallet only:**
+
+```json
+{
+  "plugins": {
+    "eliza-adapter": {
+      "plugins": ["@elizaos/plugin-evm"],
+      "settings": {
+        "EVM_PRIVATE_KEY": "${EVM_PRIVATE_KEY}"
+      }
+    }
+  }
+}
+```
+
+**Multiple plugins:**
+
+```json
+{
+  "plugins": {
+    "eliza-adapter": {
+      "plugins": [
+        "@elizaos/plugin-evm",
+        "@elizaos/plugin-solana"
+      ],
+      "settings": {
+        "EVM_PRIVATE_KEY": "${EVM_PRIVATE_KEY}",
+        "SOLANA_PRIVATE_KEY": "${SOLANA_PRIVATE_KEY}",
+        "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com"
+      },
+      "agentName": "MultiWallet"
+    }
+  }
+}
+```
+
+**Local plugin by file path:**
+
+```json
+{
+  "plugins": {
+    "eliza-adapter": {
+      "plugins": ["./my-custom-eliza-plugin/index.js"]
+    }
+  }
+}
+```
 
 ## What gets registered
 
@@ -63,11 +154,48 @@ When you configure `plugins: ["@elizaos/plugin-evm"]`, the adapter:
 3. **Registers hooks**: Wallet balance and token balance injected into agent context before each run
 4. **Registers routes**: Any HTTP endpoints the plugin exposes, under `/eliza/...`
 
-The tools appear in OpenClaw's agent like any native tool. The agent can call `eliza_send_tokens` with `{ toAddress: "0x...", amount: "1.5", chain: "base" }` and the adapter handles execution through the Eliza plugin's action handler.
+The tools appear in OpenClaw's agent like any native tool:
+
+```
+Agent: calling eliza_send_tokens({ toAddress: "0x742d...", amount: "1.5", chain: "base" })
+→ Successfully transferred 1.5 ETH to 0x742d...
+  Transaction: 0xabc...
+```
+
+### Built-in tool schemas
+
+The adapter includes pre-built parameter schemas for common wallet actions:
+
+| Tool name | Parameters |
+|---|---|
+| `eliza_send_tokens` | `toAddress`, `amount`, `token?`, `chain?` |
+| `eliza_swap_tokens` | `inputToken`, `outputToken`, `amount`, `chain?`, `slippage?` |
+| `eliza_cross_chain_transfer` | `token`, `amount`, `fromChain`, `toChain`, `toAddress?` |
+| `eliza_transfer_sol` | `toAddress`, `amount`, `mint?` |
+| `eliza_swap_sol` | `inputMint`, `outputMint`, `amount`, `slippage?` |
+
+Actions with explicit parameter definitions get their schemas converted automatically. Unknown actions get a generic `{ input: string }` fallback.
+
+## Plugin resolution
+
+Eliza plugins are loaded via dynamic `import()`. They must be npm-installed or path-resolvable from where OpenClaw runs:
+
+```bash
+# Install globally alongside OpenClaw
+npm install @elizaos/plugin-evm
+
+# Or link a local development plugin
+npm link ../my-local-eliza-plugin
+```
+
+The adapter tries these export patterns in order:
+1. Default export (`export default plugin`)
+2. Named `plugin` export (`export const plugin = ...`)
+3. Any named export matching the Plugin shape (`{ name: string, description: string }`)
 
 ## Supported Eliza plugins
 
-Any Eliza plugin that exports the standard `Plugin` shape works. Tested patterns:
+Any Eliza plugin that exports the standard `Plugin` shape works:
 
 - **Wallet plugins** (plugin-evm, plugin-solana) — actions become transfer/swap/bridge tools
 - **Service plugins** — started and available via `runtime.getService()`
@@ -75,36 +203,26 @@ Any Eliza plugin that exports the standard `Plugin` shape works. Tested patterns
 
 ### Known limitations
 
-- **LLM methods** (`useModel`, `generateText`) throw `NotImplementedError`. Actions that rely on conversational parameter extraction need explicit parameters or known schemas.
+- **LLM methods** (`useModel`, `generateText`) are not available. Actions that rely on conversational parameter extraction need explicit parameters or known schemas.
 - **Channel plugins** (Discord, Telegram) register as tools only, not as native OpenClaw channels.
-- **Database** is in-memory (10K memories/table cap with LRU eviction). No persistence.
+- **Database** is in-memory with LRU eviction (10K memories/table, 5K logs). No persistence across restarts.
 - **Embeddings** are not generated. Vector search works if embeddings are provided but none are created automatically.
-
-## Plugin resolution
-
-Eliza plugins are loaded via dynamic `import()`. They must be resolvable from the OpenClaw runtime context:
-
-```bash
-# Install the Eliza plugin you want to use
-npm install @elizaos/plugin-evm
-
-# Or use a file path
-{
-  "plugins": ["./path/to/my-eliza-plugin/index.js"]
-}
-```
 
 ## Development
 
 ```bash
+git clone https://github.com/elizaOS/openclaw-adapter.git
+cd openclaw-adapter
+npm install
+
 # Run tests (418 tests)
-pnpm test
+npm test
 
 # Type-check
-pnpm typecheck
+npm run typecheck
 
-# Build for publishing
-pnpm build
+# Build
+npm run build
 ```
 
 ## Architecture
@@ -112,20 +230,20 @@ pnpm build
 ```
 index.ts                    Entry point — loads plugins, orchestrates registration
 src/
-  runtime-bridge.ts         IAgentRuntime implementation backed by InMemoryStore
-  in-memory-store.ts        Full IDatabaseAdapter with eviction (memories, rooms, entities, etc.)
-  action-to-tool.ts         Eliza Action → OpenClaw tool (with schema conversion)
+  runtime-bridge.ts         IAgentRuntime shim backed by InMemoryStore
+  in-memory-store.ts        IDatabaseAdapter with LRU eviction
+  action-to-tool.ts         Eliza Action → OpenClaw tool
   provider-to-hook.ts       Eliza Provider → before_agent_start hook
-  service-adapter.ts        Eliza Service → OpenClaw service lifecycle
+  service-adapter.ts        Eliza Service → OpenClaw service
   route-adapter.ts          Eliza Route → OpenClaw HTTP route
-  evaluator-to-hook.ts      Eliza Evaluator → message_received/agent_end hook
-  schema-converter.ts       JSON Schema → TypeBox conversion + known wallet schemas
-  event-mapper.ts           Eliza EventType → OpenClaw PluginHookName
+  evaluator-to-hook.ts      Eliza Evaluator → lifecycle hooks
+  schema-converter.ts       JSON Schema → TypeBox + known wallet schemas
+  event-mapper.ts           Eliza events → OpenClaw hooks
   config.ts                 Config parsing with ${ENV_VAR} resolution
-  eliza-types.ts            Local type definitions (no @elizaos/core dependency)
-  logger-adapter.ts         OpenClaw logger → Eliza logger shape
-  memory-builder.ts         Memory object construction from OpenClaw contexts
-  types.ts                  Adapter config types + NotImplementedError
+  eliza-types.ts            Local type definitions (zero runtime deps on @elizaos/core)
+  logger-adapter.ts         Logger shape adapter
+  memory-builder.ts         Memory object construction
+  types.ts                  Config types + NotImplementedError
 ```
 
 ## License
