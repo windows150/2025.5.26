@@ -1,0 +1,37 @@
+{
+  "id": "eliza-adapter",
+  "name": "Eliza Plugin Adapter",
+  "description": "Wraps Eliza (@elizaos) plugins as native OpenClaw extensions",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "plugins": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Eliza plugin package names or paths to load"
+      },
+      "settings": {
+        "type": "object",
+        "additionalProperties": { "type": "string" },
+        "description": "Key-value settings passed to Eliza plugins via runtime.getSetting()"
+      },
+      "agentName": {
+        "type": "string",
+        "description": "Agent name for the Eliza character context"
+      }
+    },
+    "required": ["plugins"]
+  },
+  "uiHints": {
+    "settings": {
+      "label": "Plugin Settings",
+      "help": "Environment-variable-style settings (EVM_PRIVATE_KEY, DISCORD_API_TOKEN, etc.)",
+      "sensitive": true
+    },
+    "agentName": {
+      "label": "Agent Name",
+      "placeholder": "Eliza"
+    }
+  }
+}

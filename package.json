@@ -1,0 +1,55 @@
+{
+  "name": "@elizaos/openclaw-adapter",
+  "version": "0.1.0",
+  "description": "Run Eliza plugins inside OpenClaw — wallets, connectors, services, and more",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "openclaw",
+    "eliza",
+    "elizaos",
+    "ai-agent",
+    "plugin-adapter",
+    "evm",
+    "solana",
+    "wallet",
+    "discord",
+    "telegram"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elizaOS/openclaw-adapter"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "0.34.48"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "4.0.18"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
