@@ -97,7 +97,10 @@ describe("register with mock OpenClaw API", () => {
     ).rejects.toThrow("non-empty array");
   });
 
-  test("register fails gracefully when plugin module not found", async () => {
+  test("register handles missing plugin gracefully without throwing", async () => {
+    const errorMessages: string[] = [];
+    const registeredTools: { name: string }[] = [];
+
     const mockApi = {
       id: "eliza-adapter",
       name: "Eliza Plugin Adapter",
@@ -111,10 +114,10 @@ describe("register with mock OpenClaw API", () => {
       logger: {
         info: () => {},
         warn: () => {},
-        error: () => {},
+        error: (msg: string) => errorMessages.push(msg),
         debug: () => {},
       },
-      registerTool: () => {},
+      registerTool: (tool: { name: string }) => registeredTools.push(tool),
       registerHook: () => {},
       registerHttpHandler: () => {},
       registerHttpRoute: () => {},
@@ -128,9 +131,13 @@ describe("register with mock OpenClaw API", () => {
       on: () => {},
     };
 
-    // Should throw because the module cannot be found
-    await expect(
-      elizaAdapterPlugin.register(mockApi as never),
-    ).rejects.toThrow();
+    // Should NOT throw — graceful degradation logs the error instead
+    await elizaAdapterPlugin.register(mockApi as never);
+
+    // Error should be logged
+    expect(errorMessages.some((m) => m.includes("Failed to load"))).toBe(true);
+
+    // Status tool should still be registered for diagnostics
+    expect(registeredTools.some((t) => t.name === "eliza_adapter_status")).toBe(true);
   });
 });

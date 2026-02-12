@@ -20,7 +20,8 @@ import { adaptService } from "./src/service-adapter.js";
 import { adaptRoute } from "./src/route-adapter.js";
 import { adaptEvaluatorToHook } from "./src/evaluator-to-hook.js";
 import { mapElizaEventToOpenClawHook } from "./src/event-mapper.js";
-import type { PluginRegistrationRecord } from "./src/types.js";
+import { createStatusTool } from "./src/status-tool.js";
+import type { AdapterStatus, PluginLoadError, PluginRegistrationRecord } from "./src/types.js";
 
 async function loadElizaPlugin(specifier: string, logger: OpenClawPluginApi["logger"]): Promise<ElizaPlugin> {
   logger.info(`[eliza-adapter] Loading: ${specifier}`);
@@ -77,15 +78,41 @@ export default {
     const bridge = new RuntimeBridge({ config, openclawLogger: api.logger });
     await bridge.initialize();
 
-    let tools = 0, hooks = 0, services = 0, routes = 0;
+    const status: AdapterStatus = {
+      plugins: [],
+      errors: [],
+      totals: { tools: 0, hooks: 0, services: 0, routes: 0 },
+      startedAt: Date.now(),
+    };
+
     for (const spec of config.plugins) {
-      const plugin = await loadElizaPlugin(spec, api.logger);
-      const r = await registerElizaPlugin(plugin, bridge, api);
-      tools += r.toolCount; hooks += r.hookCount; services += r.serviceCount; routes += r.routeCount;
-      api.logger.info(`[eliza-adapter] "${plugin.name}": ${r.toolCount}T ${r.hookCount}H ${r.serviceCount}S ${r.routeCount}R`);
+      try {
+        const plugin = await loadElizaPlugin(spec, api.logger);
+        const r = await registerElizaPlugin(plugin, bridge, api);
+        status.plugins.push(r);
+        status.totals.tools += r.toolCount;
+        status.totals.hooks += r.hookCount;
+        status.totals.services += r.serviceCount;
+        status.totals.routes += r.routeCount;
+        api.logger.info(`[eliza-adapter] "${plugin.name}": ${r.toolCount}T ${r.hookCount}H ${r.serviceCount}S ${r.routeCount}R`);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        const loadError: PluginLoadError = { specifier: spec, error: errorMsg, timestamp: Date.now() };
+        status.errors.push(loadError);
+        api.logger.error(`[eliza-adapter] Failed to load "${spec}": ${errorMsg}`);
+      }
     }
 
-    api.logger.info(`[eliza-adapter] Ready: ${tools}T ${hooks}H ${services}S ${routes}R`);
+    // Register the diagnostic status tool
+    const statusTool = createStatusTool(status);
+    api.registerTool(statusTool, { name: statusTool.name });
+
+    if (status.errors.length > 0) {
+      api.logger.warn(`[eliza-adapter] ${status.errors.length} plugin(s) failed to load. Use eliza_adapter_status tool for details.`);
+    }
+
+    const { tools, hooks, services, routes } = status.totals;
+    api.logger.info(`[eliza-adapter] Ready: ${tools}T ${hooks}H ${services}S ${routes}R (${status.errors.length} error(s))`);
     api.registerService({ id: "eliza-adapter-lifecycle", start() {}, stop: () => bridge.stop() });
   },
 };

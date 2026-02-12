@@ -89,8 +89,10 @@ describe("End-to-end: real index.ts register() with real plugin import", () => {
     await adapter.register(mockApi as never);
 
     // === Verify tools were registered ===
-    expect(registeredTools.length).toBe(1);
-    expect(registeredTools[0].opts.name).toBe("eliza_ping");
+    // +1 for the eliza_adapter_status diagnostic tool
+    expect(registeredTools.length).toBe(2);
+    expect(registeredTools.map((t: any) => t.opts.name)).toContain("eliza_ping");
+    expect(registeredTools.map((t: any) => t.opts.name)).toContain("eliza_adapter_status");
 
     // === Verify hooks were registered (provider → before_agent_start) ===
     expect(registeredHooks["before_agent_start"]).toBeDefined();
